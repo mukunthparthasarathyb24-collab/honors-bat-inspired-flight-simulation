@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+*.urdf
+results/*.png
+results/*.pdf
+*.egg-info/
+.DS_Store
+venv/
+.env
