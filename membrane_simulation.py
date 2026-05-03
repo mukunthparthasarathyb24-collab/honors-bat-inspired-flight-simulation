@@ -211,6 +211,9 @@ def run_membrane_simulation(
     t_sim       = 0.0
     t_wall_prev = time.perf_counter()
     eff_normal  = np.array([0.0, 0.0, 1.0])
+    alpha_hum_filtered = 0.0
+    alpha_rad_filtered = 0.0
+    tau_filter = 0.02
 
     try:
         for step in range(n_steps):
@@ -274,6 +277,17 @@ def run_membrane_simulation(
                 elastic_E = elastic_E_now,
                 t_sim     = t_sim,
                 wind_profile = wind_profile,
+            )
+            alpha_coefficient = dt_loop / (tau_filter + dt_loop)
+            alpha_hum_raw = aero_log.get("humerus", {}).get("alpha_deg", 0.0)
+            alpha_rad_raw = aero_log.get("radius", {}).get("alpha_deg", 0.0)
+            alpha_hum_filtered = (
+                alpha_coefficient * alpha_hum_raw
+                + (1.0 - alpha_coefficient) * alpha_hum_filtered
+            )
+            alpha_rad_filtered = (
+                alpha_coefficient * alpha_rad_raw
+                + (1.0 - alpha_coefficient) * alpha_rad_filtered
             )
 
             # 8. Step physics
@@ -349,10 +363,8 @@ def run_membrane_simulation(
             log["error_el"].append(err_el)
             log["lift"].append(aero_log.get("total_lift_N", 0.0))
             log["drag"].append(aero_log.get("total_drag_N", 0.0))
-            log["alpha_hum"].append(
-                aero_log.get("humerus", {}).get("alpha_deg", 0.0))
-            log["alpha_rad"].append(
-                aero_log.get("radius",  {}).get("alpha_deg", 0.0))
+            log["alpha_hum"].append(alpha_hum_filtered)
+            log["alpha_rad"].append(alpha_rad_filtered)
             log["P_sh"].append(P_sh)
             log["P_el"].append(P_el)
             log["P_total"].append(P_tot)
